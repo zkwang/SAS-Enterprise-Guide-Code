@@ -19,7 +19,7 @@ PROC SQL;
 	select FF.PC9,
 		FF.planning_group_desc,
 		sum(FF.PREDICT) as RecFore6Mnths
-	from &projectName.FINALFOR as FF
+	from &projectName..FINALFOR as FF
 	where FF.date between 20695 and 20876
 	group by FF.PC9,
 		FF.planning_group_desc
@@ -69,7 +69,7 @@ Step 5:  Categorize PC9s into the appropriate volume bucket
 */
 
 PROC SQL;
-	create table Pc9Cat_S5_%projectName as
+	create table Pc9Cat_S5_&projectName as
 	select 
 		Pc9,
 		planning_group_desc,

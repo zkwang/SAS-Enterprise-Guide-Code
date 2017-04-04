@@ -20,13 +20,31 @@ PROC SQL;
 		sum(RF.PREDICT) as RecFore6Mnths,
 		sum(RF.ACTUAL) as Actual6Mnths,
 		sum(abs(RF.ERROR)) as AbsoluteError6Mnths,
-		case when sum(RF.ACTUAL) <= 0 then 0 else sum(abs(RF.ERROR)) / sum(RF.ACTUAL) end as MAPE6Mnths,
+		case when sum(RF.ACTUAL) <= 0 then 0 else sum(abs(RF.ERROR)) / (sum(RF.ACTUAL)) end as MAPE6Mnths,
 		sum(RF.ERROR) as AlgBias6Mnths
-	from &projectName.RECFOR as RF,
+	from &projectName..RECFOR as RF,
 		(select min(FF.date) as FirstForecastDate
 		from LMB_LSA.FINALFOR as FF) as FFD
 	where RF.date between FFD.FirstForecastDate - 180 and FFD.FirstForecastDate
 	group by RF.PC9,
 		RF.planning_group_desc
 	order by planning_group_desc asc, RecFore6Mnths desc;
+QUIT;
+
+/*
+Step 2:  Classify each PC9 per Planning Group into the appropriate category
+*/
+
+PROC SQL;
+	create table WORK.Pc9HistoricError_S2_&projectName as
+	select 
+		Pc9,
+		planning_group_desc,
+		case when AlgBias6Mnths < 0 then 'Under Bias'
+			when AlgBias6Mnths > 0 then 'Over Bias'
+			else 'No Bias' end as BiasFlag,
+		case when MAPE6Mnths > 0.3 then 'High'
+			when MAPE6Mnths < 0.075 then 'Low'
+			else 'Medium' end as PriorityFlag
+	from Pc9HistoricError_S1;
 QUIT;
